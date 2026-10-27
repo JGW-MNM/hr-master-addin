@@ -14,6 +14,30 @@ let layer = null;        // DataExcel atau DataDemo
 let data = null;         // {master, dept, job, log}
 let st = null;           // state hasil HRCore.buildState
 let currentView = "home";
+const APP_VERSION = "v1.1-diag";
+
+/* ======================= DIAGNOSTIK =======================
+ * Setiap langkah submit dicatat ke localStorage. Kalau panel crash / reload di tengah jalan,
+ * saat panel dibuka lagi akan muncul kotak "Submit terakhir berhenti di langkah …". */
+function trace(step) {
+  console.log("[HRM]", step);
+  try {
+    const t = JSON.parse(localStorage.getItem("hrm.trace") || "[]");
+    t.push(new Date().toLocaleTimeString() + "  " + step);
+    localStorage.setItem("hrm.trace", JSON.stringify(t.slice(-40)));
+  } catch (e) { /* abaikan */ }
+}
+function traceReset() { try { localStorage.setItem("hrm.trace", "[]"); } catch (e) { /* abaikan */ } }
+function traceRead() { try { return JSON.parse(localStorage.getItem("hrm.trace") || "[]"); } catch (e) { return []; } }
+window.addEventListener("error", (e) => trace("JS ERROR: " + (e.message || e.error)));
+window.addEventListener("unhandledrejection", (e) => trace("PROMISE ERROR: " + ((e.reason && (e.reason.message || e.reason.code)) || e.reason)));
+function errText(e) {
+  if (!e) return "unknown";
+  const parts = [e.message || String(e)];
+  if (e.code) parts.push("code: " + e.code);
+  if (e.debugInfo) parts.push("debugInfo: " + JSON.stringify(e.debugInfo));
+  return parts.join(" | ");
+}
 
 /* ======================= DATA LAYER: EXCEL ======================= */
 const DataExcel = {
@@ -33,20 +57,26 @@ const DataExcel = {
       const shM = wb.worksheets.getItem("MASTER"), shL = wb.worksheets.getItem("CHANGE_LOG");
       shM.protection.load("protected"); shL.protection.load("protected");
       await ctx.sync();
+      trace(`3. proteksi: MASTER=${shM.protection.protected}, CHANGE_LOG=${shL.protection.protected}`);
       if (shM.protection.protected) shM.protection.unprotect(PWD);
       if (shL.protection.protected) shL.protection.unprotect(PWD);
       await ctx.sync();
+      trace("4. unprotect OK");
       try {
         const tM = wb.tables.getItem("tblMaster");
         const body = tM.getDataBodyRange();
         res.updates.forEach((u) => { body.getCell(u.index, 0).getResizedRange(0, 13).values = [u.row]; });
-        await appendRows(ctx, tM, res.newRows, H.MASTER_FMT);
-        await appendRows(ctx, wb.tables.getItem("tblLog"), res.logs, H.LOG_FMT);
         await ctx.sync();
+        trace(`5. update ${res.updates.length} baris MASTER OK`);
+        await appendRows(ctx, tM, res.newRows, H.MASTER_FMT);
+        trace(`6. tambah ${res.newRows.length} baris MASTER OK`);
+        await appendRows(ctx, wb.tables.getItem("tblLog"), res.logs, H.LOG_FMT);
+        trace(`7. tambah ${res.logs.length} baris CHANGE_LOG OK`);
       } finally {
         shM.protection.protect(PROTECT_OPTS, PWD);
         shL.protection.protect(PROTECT_OPTS, PWD);
         await ctx.sync();
+        trace("8. protect ulang OK");
       }
     });
   },
@@ -66,9 +96,11 @@ async function appendRows(ctx, table, rows, fmts) {
   } else {
     table.rows.add(null, rows.map(blank));
   }
+  await ctx.sync();
   const rng = table.getDataBodyRange().getCell(start, 0).getResizedRange(rows.length - 1, fmts.length - 1);
   rng.numberFormat = rows.map(() => fmts);
   rng.values = rows;
+  await ctx.sync();
 }
 
 /* ======================= DATA LAYER: DEMO ======================= */
@@ -260,9 +292,11 @@ async function submit(view) {
   const v = (id) => ($(id) ? $(id).value : "");
   const btn = $("#submit"), msg = $("#msg");
   btn.disabled = true; btn.textContent = "Memproses…"; msg.innerHTML = "";
+  traceReset();
+  trace(`0. submit ${view} (${APP_VERSION})`);
   try {
     setBy(s(v("#f-by")));
-    await refresh(); // selalu pakai data terbaru sebelum validasi (kalau ada user lain yang mengubah)
+    await refresh(); trace("1. baca data terbaru OK"); // selalu pakai data terbaru sebelum validasi (kalau ada user lain yang mengubah)
     const date = H.isoToSerial(v("#f-date"));
     const base = { id: v("#f-id"), by: v("#f-by"), remarks: v("#f-rem") };
     const res =
@@ -271,18 +305,24 @@ async function submit(view) {
       view === "changeReport" ? H.changeReport(st, { ...base, newDr: v("#f-dr"), eff: date }) :
       H.offboarding(st, { ...base, term: date });
 
+    trace(`2. validasi: ${res.errors.length} error`);
     if (res.errors.length) {
+      trace("DONE (validasi gagal)");
       msg.innerHTML = `<div class="alert err"><b>Belum bisa disubmit:</b><ul>${res.errors.map((e) => `<li>${esc(e)}</li>`).join("")}</ul></div>`;
       return;
     }
     await layer.commit(res);
+    trace("9. commit selesai");
     await refresh();
+    trace("DONE");
     const id = s(v("#f-id"));
     render(view);
     $("#msg").innerHTML = `<div class="alert ok">✓ Tersimpan untuk <b>${esc(id)}</b> — ${res.logs.length} baris dicatat di CHANGE_LOG.</div>`;
   } catch (e) {
     console.error(e);
-    msg.innerHTML = `<div class="alert err"><b>Error:</b> ${esc(e.message || e)}</div>`;
+    trace("GAGAL: " + errText(e));
+    msg.innerHTML = `<div class="alert err"><b>Error:</b> ${esc(errText(e))}
+      <pre style="white-space:pre-wrap;font-size:10.5px;margin:6px 0 0">${esc(traceRead().join("\n"))}</pre></div>`;
   } finally {
     if ($("#submit")) { $("#submit").disabled = false; $("#submit").textContent = "Submit"; }
   }
@@ -309,7 +349,7 @@ function render(view, prefill = {}) {
 async function start(inExcel) {
   layer = inExcel ? DataExcel : DataDemo;
   const badge = $("#mode");
-  badge.textContent = inExcel ? "Excel" : "Demo mode";
+  badge.textContent = (inExcel ? "Excel" : "Demo mode") + " · " + APP_VERSION;
   badge.classList.toggle("demo", !inExcel);
   document.querySelectorAll("#nav button").forEach((b) => b.addEventListener("click", () => render(b.dataset.view)));
   // tombol "Pindahkan →" di daftar bawahan (Offboarding) → buka Change Direct Report
@@ -321,6 +361,13 @@ async function start(inExcel) {
     await refresh();
     const q = new URLSearchParams(location.search).get("view");
     render(VIEWS[q] ? q : "home");
+    const tr = traceRead();
+    if (tr.length && !tr[tr.length - 1].includes("DONE")) {
+      $("#app").insertAdjacentHTML("afterbegin", `<div class="alert warn" style="margin:0 0 12px"><b>Submit terakhir tidak selesai.</b>
+        Langkah terakhir yang tercatat:<pre style="white-space:pre-wrap;font-size:10.5px;margin:6px 0 0">${esc(tr.join("\n"))}</pre>
+        <button class="btn ghost" id="trace-clear" style="margin-top:6px">Tutup</button></div>`);
+      $("#trace-clear").addEventListener("click", () => { traceReset(); render(currentView); });
+    }
   } catch (e) {
     console.error(e);
     $("#app").innerHTML = `<div class="alert err"><b>Gagal membaca workbook.</b><br>${esc(e.message || e)}<br><br>
