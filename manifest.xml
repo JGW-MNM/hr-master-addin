@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Manifest = "KTP" add-in: memberi tahu Excel nama add-in, alamat halaman HTML-nya,
+  dan tombol apa yang dipasang di ribbon.
+  SEBELUM DIPAKAI: ganti semua teks GITHUB_USERNAME dengan username GitHub Anda (ada 14 tempat).
+-->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>6dacd856-2622-43b1-961b-177dad831c0a</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>HRIS</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="HR Master"/>
+  <Description DefaultValue="Onboarding, change organization, change direct report, and offboarding for the SSOT Employee Master."/>
+  <IconUrl DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html"/>
+  <AppDomains>
+    <AppDomain>https://GITHUB_USERNAME.github.io</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Workbook"/>
+  </Hosts>
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="ExcelApi" MinVersion="1.7"/>
+    </Sets>
+  </Requirements>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Workbook">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Desc"/>
+            <LearnMoreUrl resid="Url.Home"/>
+          </GetStarted>
+          <FunctionFile resid="Url.Commands"/>
+
+          <!-- Tab custom "HR Master" di ribbon -->
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <CustomTab id="HRM.Tab">
+              <Group id="HRM.GroupWorkflow">
+                <Label resid="Group.Workflow"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+
+                <Control xsi:type="Button" id="HRM.Home">
+                  <Label resid="Btn.Home"/>
+                  <Supertip><Title resid="Btn.Home"/><Description resid="Tip.Home"/></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16"/><bt:Image size="32" resid="Icon.32"/><bt:Image size="80" resid="Icon.80"/></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>HRMPane</TaskpaneId><SourceLocation resid="Url.Home"/></Action>
+                </Control>
+
+                <Control xsi:type="Button" id="HRM.Onb">
+                  <Label resid="Btn.Onb"/>
+                  <Supertip><Title resid="Btn.Onb"/><Description resid="Tip.Onb"/></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16"/><bt:Image size="32" resid="Icon.32"/><bt:Image size="80" resid="Icon.80"/></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>HRMPane</TaskpaneId><SourceLocation resid="Url.Onb"/></Action>
+                </Control>
+
+                <Control xsi:type="Button" id="HRM.Org">
+                  <Label resid="Btn.Org"/>
+                  <Supertip><Title resid="Btn.Org"/><Description resid="Tip.Org"/></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16"/><bt:Image size="32" resid="Icon.32"/><bt:Image size="80" resid="Icon.80"/></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>HRMPane</TaskpaneId><SourceLocation resid="Url.Org"/></Action>
+                </Control>
+
+                <Control xsi:type="Button" id="HRM.Rep">
+                  <Label resid="Btn.Rep"/>
+                  <Supertip><Title resid="Btn.Rep"/><Description resid="Tip.Rep"/></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16"/><bt:Image size="32" resid="Icon.32"/><bt:Image size="80" resid="Icon.80"/></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>HRMPane</TaskpaneId><SourceLocation resid="Url.Rep"/></Action>
+                </Control>
+
+                <Control xsi:type="Button" id="HRM.Off">
+                  <Label resid="Btn.Off"/>
+                  <Supertip><Title resid="Btn.Off"/><Description resid="Tip.Off"/></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16"/><bt:Image size="32" resid="Icon.32"/><bt:Image size="80" resid="Icon.80"/></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>HRMPane</TaskpaneId><SourceLocation resid="Url.Off"/></Action>
+                </Control>
+              </Group>
+              <Label resid="Tab.Label"/>
+            </CustomTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Url.Commands" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/commands.html"/>
+        <bt:Url id="Url.Home" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html?view=home"/>
+        <bt:Url id="Url.Onb" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html?view=onboarding"/>
+        <bt:Url id="Url.Org" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html?view=changeOrg"/>
+        <bt:Url id="Url.Rep" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html?view=changeReport"/>
+        <bt:Url id="Url.Off" DefaultValue="https://GITHUB_USERNAME.github.io/hr-master-addin/taskpane.html?view=offboarding"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Tab.Label" DefaultValue="HR Master"/>
+        <bt:String id="Group.Workflow" DefaultValue="Employee Workflow"/>
+        <bt:String id="GetStarted.Title" DefaultValue="HR Master siap dipakai"/>
+        <bt:String id="Btn.Home" DefaultValue="Dashboard"/>
+        <bt:String id="Btn.Onb" DefaultValue="Onboarding"/>
+        <bt:String id="Btn.Org" DefaultValue="Change Org"/>
+        <bt:String id="Btn.Rep" DefaultValue="Direct Report"/>
+        <bt:String id="Btn.Off" DefaultValue="Offboarding"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Desc" DefaultValue="Buka tab HR Master di ribbon untuk mulai."/>
+        <bt:String id="Tip.Home" DefaultValue="Ringkasan jumlah karyawan dan perubahan terakhir."/>
+        <bt:String id="Tip.Onb" DefaultValue="Input karyawan baru ke MASTER."/>
+        <bt:String id="Tip.Org" DefaultValue="Ubah Department dan/atau Job Title."/>
+        <bt:String id="Tip.Rep" DefaultValue="Pindahkan karyawan ke atasan langsung baru."/>
+        <bt:String id="Tip.Off" DefaultValue="Set Termination Date dan status Inactive."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
